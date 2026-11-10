@@ -853,7 +853,7 @@ table{max-width:100%;}
 <!-- LOGIN -->
 <div id="page-login" class="auth-container">
 <div class="auth-card">
-<h2 id="login-judul">ARTOFIE POS</h2>
+<h2 id="login-judul" style="visibility:hidden">&nbsp;</h2><script>(function(){try{var c=localStorage.getItem('artofie_nama_login');if(c){var h=document.getElementById('login-judul');h.textContent=c;h.style.visibility='visible';}}catch(e){}})();</script>
 <p style="font-size:12px;color:gray;margin-bottom:20px;">Silakan login terlebih dahulu</p>
 <div style="margin-bottom:12px;"><input type="text" id="login-username" class="input-box" placeholder="Username" autocomplete="username" autocapitalize="none" spellcheck="false"></div>
 <div class="pwd-wrap" style="margin-bottom:20px;"><input type="password" id="login-password" class="input-box" placeholder="Password" autocomplete="current-password" style="padding-right:46px;"><button type="button" class="btn-eye" onclick="togglePassword('login-password',this)" aria-label="Tampilkan password" title="Tampilkan password"><i class="fa-solid fa-eye"></i></button></div>
@@ -2424,7 +2424,7 @@ let logoutSetelahTutupKas=false;
 function sudahTutupKasHariIni(){return localStorage.getItem('artofie_tutup_kas')===getLocalDateString();}
 // Hapus data sesi, tetapi pertahankan pengaturan tampilan (urutan menu dashboard) agar tidak hilang saat logout
 function bersihkanSesi(){
-  const simpan=['artofie_menu_order','artofie_device_id','artofie_logout_tertunda','artofie_kelola_pref','artofie_cabang_cache','artofie_kds_stasiun','artofie_qr_base'],cad={};
+  const simpan=['artofie_menu_order','artofie_device_id','artofie_logout_tertunda','artofie_kelola_pref','artofie_cabang_cache','artofie_kds_stasiun','artofie_qr_base','artofie_nama_login'],cad={};
   simpan.forEach(function(k){const v=localStorage.getItem(k);if(v!==null)cad[k]=v;});
   Object.keys(localStorage).forEach(function(k){if(/^artofie_(fav|recent)_/.test(k)){const v=localStorage.getItem(k);if(v!==null)cad[k]=v;}});
   localStorage.clear();
@@ -5423,17 +5423,19 @@ const NAMA_LOGIN_DEFAULT='ARTOFIE POS';
 function terapkanNamaLogin(n){
   n=String(n==null?'':n).trim().slice(0,40);
   const el=document.getElementById('login-judul');
-  if(el)el.textContent=n||NAMA_LOGIN_DEFAULT;
+  if(el){el.textContent=n||NAMA_LOGIN_DEFAULT;el.style.visibility='visible';}
   try{if(n)localStorage.setItem('artofie_nama_login',n);else localStorage.removeItem('artofie_nama_login');}catch(_){}
 }
 (function(){
   try{const c=localStorage.getItem('artofie_nama_login');if(c)terapkanNamaLogin(c);}catch(_){}
   // Ambil nama terbaru dari server (endpoint publik, tidak perlu login)
+  const tampilDefault=()=>{const el=document.getElementById('login-judul');if(el&&el.style.visibility==='hidden')terapkanNamaLogin('');};
+  setTimeout(tampilDefault,4000);
   try{
     fetch(APPS_SCRIPT_URL+'?action=getInfoLogin&t='+Date.now()).then(r=>r.json()).then(d=>{
-      if(d&&d.status==='success')terapkanNamaLogin(d.nama_login);
-    }).catch(()=>{});
-  }catch(_){}
+      if(d&&d.status==='success')terapkanNamaLogin(d.nama_login);else tampilDefault();
+    }).catch(tampilDefault);
+  }catch(_){tampilDefault();}
 })();
 async function muatPengaturanServer(){
   const c=cacheBaca('pengaturan');
