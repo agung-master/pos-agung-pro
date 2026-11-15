@@ -4183,7 +4183,7 @@ function terapkanFilterPengeluaran(){
     const m=String(it.Kategori||"").toLowerCase().includes(cari)||String(it.Keterangan||"").toLowerCase().includes(cari)||String(it.ID_Pengeluaran||"").toLowerCase().includes(cari);
     return ok&&m;
   });
-  historiPengeluaranFiltered.sort((a,b)=>new Date(b.Tanggal)-new Date(a.Tanggal));
+  historiPengeluaranFiltered.sort((a,b)=>(new Date(String(b.Tanggal).replace(' ','T'))||0)-(new Date(String(a.Tanggal).replace(' ','T'))||0)); // 'yyyy-MM-dd HH:mm:ss' tidak terbaca Safari/iOS tanpa 'T'
   renderTabelPengeluaran();
 }
 
