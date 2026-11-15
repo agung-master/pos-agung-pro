@@ -6,7 +6,7 @@
 // ==================================================================================
 // >>>>>>>>>>  TEMPEL URL CODE.GS (WEB APP, berakhiran /exec) DI BAWAH INI  <<<<<<<<<<
 // ==================================================================================
-const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzdb-tykyIrjJjFjZJHIfTff1NgxPSPU1iIYxLDBfmWm6UdU5MfpIxfo2mivEYxO9iV/exec";
+const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwp9vpUAGffiIP7LM-b4SE2ZAfXyAXPQdbsQvXIvFk0dXirvriLo3X7PRkGcAELsnSH/exec";
 // >>>>>>>>>>  SELESAI. Ini SATU-SATUNYA tempat URL diisi (dipakai kasir dan halaman pesan pelanggan)  <<<<<<<<<<
 
 // MODE PELANGGAN (Pesan di Meja): dibuka dari QR meja, yaitu alamat aplikasi ini + ?c=..&m=..&k=..
@@ -2424,7 +2424,7 @@ let logoutSetelahTutupKas=false;
 function sudahTutupKasHariIni(){return localStorage.getItem('artofie_tutup_kas')===getLocalDateString();}
 // Hapus data sesi, tetapi pertahankan pengaturan tampilan (urutan menu dashboard) agar tidak hilang saat logout
 function bersihkanSesi(){
-  const simpan=['artofie_menu_order','artofie_device_id','artofie_logout_tertunda','artofie_kelola_pref','artofie_cabang_cache','artofie_kds_stasiun','artofie_qr_base','artofie_nama_login'],cad={};
+  const simpan=['artofie_menu_order','artofie_device_id','artofie_logout_tertunda','artofie_kelola_pref','artofie_cabang_cache','artofie_kds_stasiun','artofie_qr_base','artofie_nama_login','ao_q','ao_q_gagal'],cad={};
   simpan.forEach(function(k){const v=localStorage.getItem(k);if(v!==null)cad[k]=v;});
   Object.keys(localStorage).forEach(function(k){if(/^artofie_(fav|recent)_/.test(k)){const v=localStorage.getItem(k);if(v!==null)cad[k]=v;}});
   localStorage.clear();
@@ -2446,6 +2446,7 @@ function kirimLogoutServer(tk){
     .catch(function(){});}catch(e){}
 }
 function eksekusiLogout(){
+  try{const nq=JSON.parse(localStorage.getItem('ao_q')||'[]').length;if(nq>0&&!confirm(nq+' transaksi offline belum terkirim ke server. Data tetap tersimpan di perangkat dan dikirim saat Anda login lagi. Tetap keluar?'))return;}catch(e){}
   const tk=localStorage.getItem('artofie_token');
   tampilkanLayarKeluar();
   if(tk)localStorage.setItem('artofie_logout_tertunda',tk);
@@ -2733,7 +2734,7 @@ async function muatResepHPP(){
     const bs=document.getElementById('resep-bahan-select');
     bs.innerHTML='';
     if(bahanBakuMaster.length===0)bs.innerHTML='<option value="">-- Belum ada bahan --</option>';
-    else bahanBakuMaster.forEach(b=>{bs.innerHTML+=`<option value="${b.ID_Bahan}">${b.Nama_Bahan} (Rp ${formatRupiah(b.Harga_Satuan)}/${b.Satuan})</option>`;});
+    else bahanBakuMaster.forEach(b=>{bs.innerHTML+=`<option value="${escH(b.ID_Bahan)}">${escH(b.Nama_Bahan)} (Rp ${formatRupiah(b.Harga_Satuan)}/${b.Satuan})</option>`;});
     renderResepForMenu();
   }catch(e){alert("Gagal memuat resep: "+e.message);}
 }
@@ -4795,8 +4796,8 @@ function hitungKalkulasi(){
   },0);
   const subSet=Math.max(0,sub-totDisItem);
   memberBersihDiskon();
-  const dpG=parseFloat(document.getElementById('input-diskon-persen').value)||0;
-  let drG=parseFloat(document.getElementById('input-diskon-rp').value)||0;
+  const dpG=Math.min(100,Math.max(0,parseFloat(document.getElementById('input-diskon-persen').value)||0));
+  let drG=Math.max(0,parseFloat(document.getElementById('input-diskon-rp').value)||0);
   if(dpG>0){drG=subSet*(dpG/100);document.getElementById('input-diskon-rp').value=drG;}
   let dV=0;
   if(voucherAktifTerpakai){
@@ -4810,7 +4811,7 @@ function hitungKalkulasi(){
   const fnbH = window.fnbNilai?window.fnbNilai():{svc:0,tip:0};
   const svcNominal = Math.round(Math.max(0,subSet - drG - dV) * (fnbH.svc/100));
   const tipNominal = fnbH.tip;
-  const ppnNominal = Math.round((subSet - drG - dV + svcNominal) * (ppnPersen/100));
+  const ppnNominal = Math.max(0,Math.round((subSet - drG - dV + svcNominal) * (ppnPersen/100)));
   
   // Poin hanya untuk member terdaftar: dibatasi saldo poin member & sisa tagihan
   const nilaiPoinPer = parseFloat(pengaturanToko.nilai_poin) || 100;
@@ -4906,7 +4907,7 @@ async function prosesPembayaran(){
     const pu=k.diskonTipe==='persen'?k.Harga*(k.diskonNilai/100):k.diskonNilai;
     return s+(pu*k.qty);
   },0);
-  const dG=parseFloat(document.getElementById('input-diskon-rp').value)||0;
+  const dG=Math.max(0,parseFloat(document.getElementById('input-diskon-rp').value)||0);
   let dV=0;
   if(voucherAktifTerpakai){
     const vt=voucherAktifTerpakai.Tipe_Voucher;
@@ -4918,7 +4919,7 @@ async function prosesPembayaran(){
   const fnbN = window.fnbNilai?window.fnbNilai():{svc:0,tip:0,layanan:'',meja:''};
   const svcNominal = Math.round(Math.max(0,sub - totDisItem - dG - dV) * (fnbN.svc/100));
   const tipNominal = fnbN.tip;
-  const ppnNominal = Math.round((sub - totDisItem - dG - dV + svcNominal) * (ppnPersen/100));
+  const ppnNominal = Math.max(0,Math.round((sub - totDisItem - dG - dV + svcNominal) * (ppnPersen/100)));
   window._fnbSnap={svc:svcNominal,tip:tipNominal,meja:fnbN.meja,layanan:fnbN.layanan,ppn:ppnNominal};
   window._hasilTrx=null;
   const poinDigunakan = parseFloat(document.getElementById('input-poin-digunakan').value) || 0;
@@ -5301,7 +5302,7 @@ function renderUserList(){
     const pc=(u.Hak_Akses||"").split(',').filter(p=>p.trim()).length;
     const c=document.createElement('div');
     c.className='user-card-item';
-    c.innerHTML=`<div style="flex:1;min-width:0;"><div style="display:flex;gap:6px;align-items:center;margin-bottom:4px;flex-wrap:wrap;"><strong style="font-size:13px;color:#0f172a;">${u.Username}</strong>${rb}${sb}</div><div style="font-size:11px;color:#475569;">${u.Nama||'-'}</div><div style="font-size:10px;color:#94a3b8;margin-top:2px;"><i class="fa-solid fa-key"></i> ${pc} hak akses · <i class="fa-solid fa-clock"></i> ${u.Terakhir_Login||'-'}</div></div><div style="display:flex;gap:4px;flex-shrink:0;"><button onclick="bukaFormUser(true,'${u.Username}')" style="background:#0284c7;color:#fff;border:none;width:32px;height:32px;border-radius:6px;cursor:pointer;"><i class="fa-solid fa-pen"></i></button><button onclick="hapusUserConfirm('${u.Username}')" style="background:#dc2626;color:#fff;border:none;width:32px;height:32px;border-radius:6px;cursor:pointer;${isSelf||isAdmin?'opacity:0.4;cursor:not-allowed;':''}" ${isSelf||isAdmin?'disabled':''}><i class="fa-solid fa-trash"></i></button></div>`;
+    c.innerHTML=`<div style="flex:1;min-width:0;"><div style="display:flex;gap:6px;align-items:center;margin-bottom:4px;flex-wrap:wrap;"><strong style="font-size:13px;color:#0f172a;">${escH(u.Username)}</strong>${rb}${sb}</div><div style="font-size:11px;color:#475569;">${escH(u.Nama||'-')}</div><div style="font-size:10px;color:#94a3b8;margin-top:2px;"><i class="fa-solid fa-key"></i> ${pc} hak akses · <i class="fa-solid fa-clock"></i> ${u.Terakhir_Login||'-'}</div></div><div style="display:flex;gap:4px;flex-shrink:0;"><button onclick="bukaFormUser(true,'${u.Username}')" style="background:#0284c7;color:#fff;border:none;width:32px;height:32px;border-radius:6px;cursor:pointer;"><i class="fa-solid fa-pen"></i></button><button onclick="hapusUserConfirm('${u.Username}')" style="background:#dc2626;color:#fff;border:none;width:32px;height:32px;border-radius:6px;cursor:pointer;${isSelf||isAdmin?'opacity:0.4;cursor:not-allowed;':''}" ${isSelf||isAdmin?'disabled':''}><i class="fa-solid fa-trash"></i></button></div>`;
     box.appendChild(c);
   });
 }
@@ -5772,15 +5773,15 @@ window.fetchJSON=async function(u,o){
   try{const r=await f0(u,o);if(!post&&r&&r.status!=='error'){try{localStorage.setItem(key,JSON.stringify(r));}catch(e){}}return r;}
   catch(e){
     if(!post){const c=localStorage.getItem(key);if(c&&netErr(e))return JSON.parse(c);}
-    else if(isTrx&&netErr(e)){const b=JSON.parse(o.body);delete b.token;const q=getQ();if(!q.some(x=>x.id_transaksi===b.id_transaksi))q.push(b);setQ(q);kurangiStok(b);historiDataMaster.push(pseudo(b));updateDashboard();updQ();return{status:'success',message:'Tersimpan offline',offline:true};}
+    else if(isTrx&&netErr(e)){const b=JSON.parse(o.body);delete b.token;b._u=userKasirAktif;b.offline_sync=true;const q=getQ();if(!q.some(x=>x.id_transaksi===b.id_transaksi))q.push(b);setQ(q);kurangiStok(b);historiDataMaster.push(pseudo(b));updateDashboard();updQ();return{status:'success',message:'Tersimpan offline',offline:true};}
     throw e;}
 };
 let syncing=0;
 window.aoSinkron=async function(){
   if(syncing||!navigator.onLine)return;const q=getQ();if(!q.length)return;syncing=1;const sisa=[],gagal=[];let ok=0;
-  for(const b of q){try{const r=await f0(URLX(),{method:'POST',body:JSON.stringify(b)});if(r.status==='success')ok++;else if(r.code===401)sisa.push(b);else gagal.push(b.id_transaksi+': '+r.message);}catch(e){sisa.push(b);}}
+  for(const b of q){if(b._u&&b._u!==userKasirAktif){sisa.push(b);continue;}try{const r=await f0(URLX(),{method:'POST',body:JSON.stringify(b)});if(r.status==='success')ok++;else if(r.code===401||r.code===403||r.code===423)sisa.push(b);else{gagal.push(b.id_transaksi+': '+r.message);try{const g=JSON.parse(localStorage.getItem('ao_q_gagal')||'[]');g.push({trx:b,pesan:r.message,waktu:new Date().toISOString()});localStorage.setItem('ao_q_gagal',JSON.stringify(g));}catch(e2){}}}catch(e){sisa.push(b);}}
   setQ(sisa);syncing=0;updQ();
-  if(gagal.length)alert('Transaksi offline ditolak server:\n'+gagal.join('\n'));
+  if(gagal.length)alert('Transaksi offline ditolak server (salinannya disimpan di perangkat):\n'+gagal.join('\n'));
   if(ok){muatHistoriServer();muatMenuServer();}
 };
 window.addEventListener('online',()=>{perbaruiStatusKoneksi();aoSinkron();});setInterval(aoSinkron,45000);
