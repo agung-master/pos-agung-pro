@@ -6632,6 +6632,7 @@ window.muatKinerja=async function(){
   box.innerHTML='<p style="text-align:center;color:gray;padding:20px;">Memuat...</p>';
   try{
     const d=await fetchJSON(APPS_SCRIPT_URL+'?action='+act+q+'&t='+Date.now());
+    if(t!==knTabAktif)return; // tab sudah berganti saat menunggu: jangan timpa tampilan tab baru
     if(!d||d.status!=='success'){box.innerHTML='<p style="color:red;padding:20px;">'+esc((d&&d.message)||'Gagal memuat')+'</p>';return;}
     ({kasir:rKasir,jam:rJam,laba:rLaba,lambat:rLambat,cetak:rCetak})[t](d,box);
   }catch(e){box.innerHTML='<p style="color:red;padding:20px;">Gagal: '+esc(e.message)+'</p>';}
