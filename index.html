@@ -3071,7 +3071,7 @@ function renderOpnameList(){
 function ubahOpnameFisik(idx,val){opnameData[idx].stok_fisik=parseFloat(val)||0;renderOpnameList();}
 
 async function simpanStokOpnameServer(){
-  const items=opnameData.filter(o=>o.stok_fisik!==o.stok_sistem);
+  const items=opnameData.filter(o=>(parseFloat(o.stok_fisik)||0)!==(parseFloat(o.stok_sistem)||0));
   if(items.length===0){alert("Tidak ada selisih stok");return;}
   const payload={action:"simpanStokOpname",items:items.map(o=>({id_menu:o.id,nama_menu:o.nama,stok_sistem:o.stok_sistem,stok_fisik:o.stok_fisik,keterangan:o.keterangan||'-'})),kasir:userKasirAktif};
   try{const res=await fetchJSON(APPS_SCRIPT_URL,{method:"POST",body:JSON.stringify(payload)});
@@ -5867,7 +5867,7 @@ window.$=$;
 window.bukaHutangSupplier=async function(){
   $('modal-hutang-supplier').style.display='flex';const box=$('hs-box');box.innerHTML='<p style="text-align:center;color:gray">Memuat...</p>';
   try{const d=await fetchJSON(URLX()+'?action=getPembelian&t='+Date.now());
-    const L=(Array.isArray(d)?d:[]).filter(p=>/hutang|belum/i.test(p.Status)).map(p=>({p,sisa:p.Total-p.Terbayar})).sort((a,b)=>(a.p.Jatuh_Tempo||'9999')>(b.p.Jatuh_Tempo||'9999')?1:-1);
+    const L=(Array.isArray(d)?d:[]).filter(p=>/hutang|belum/i.test(p.Status)).map(p=>({p,sisa:(parseFloat(p.Total)||0)-(parseFloat(p.Terbayar)||0)})).sort((a,b)=>(a.p.Jatuh_Tempo||'9999')>(b.p.Jatuh_Tempo||'9999')?1:-1);
     box.innerHTML=L.length?`<div class="hut-sum">Total hutang <b>Rp ${fmt(L.reduce((s,o)=>s+o.sisa,0))}</b></div>`+L.map(({p,sisa})=>`<div class="hut-row"><div><b>${escH(p.Nama_Supplier)}</b> ${badge(p.Jatuh_Tempo)}<br><small>${escH(p.ID_Pembelian)} · ${escH(String(p.Tanggal).slice(0,10))} · Total Rp ${fmt(p.Total)} · Dibayar Rp ${fmt(p.Terbayar)}</small><br><b style="color:#c2410c">Sisa Rp ${fmt(sisa)}</b></div><button onclick="bayarHS('${escH(p.ID_Pembelian)}',${sisa})">Bayar</button></div>`).join(''):'<p style="text-align:center;color:gray;padding:20px">Tidak ada hutang supplier.</p>';
   }catch(e){box.innerHTML='<p style="color:red">Gagal: '+escH(e.message)+'</p>';}
 };
@@ -6596,7 +6596,7 @@ function renderDapur(d){
   }).join('');
 }
 window.kdsUbah=async function(id,n,status){
-  try{await fetchJSON(APPS_SCRIPT_URL,{method:'POST',body:JSON.stringify({action:'ubahStatusDapur',id_order:id,nomor_tiket:n,status:status})});}catch(e){alert('Gagal: '+e.message);}
+  try{const r=await fetchJSON(APPS_SCRIPT_URL,{method:'POST',body:JSON.stringify({action:'ubahStatusDapur',id_order:id,nomor_tiket:n,status:status})});if(r&&r.status!=='success')alert('Gagal: '+(r.message||'Status tiket tidak dapat diubah'));}catch(e){alert('Gagal: '+e.message);}
   muatDapur();
 };
 
