@@ -6,7 +6,7 @@
 // ==================================================================================
 // >>>>>>>>>>  TEMPEL URL CODE.GS (WEB APP, berakhiran /exec) DI BAWAH INI  <<<<<<<<<<
 // ==================================================================================
-const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwXuvKvUZ7la1RmrRehVCfniqxkJVqVUnbRGYE8PhNHtiE4kxade7J8_F-QJBjdQqe3/exec";
+const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwYhP_RJU74i-XvkMvsZgnl0Xq5RIaShuQbRzx2lDkCF33aklHvq6K70NJql9ZfcL2B/exec";
 // >>>>>>>>>>  SELESAI. Ini SATU-SATUNYA tempat URL diisi (dipakai kasir dan halaman pesan pelanggan)  <<<<<<<<<<
 
 // MODE PELANGGAN (Pesan di Meja): dibuka dari QR meja, yaitu alamat aplikasi ini + ?c=..&m=..&k=..
@@ -5809,6 +5809,26 @@ function lebarkan(ids,orig){return function(){const s=$(ids[0]).value,e=$(ids[1]
   return orig.apply(this,arguments);};}
 window.terapkanFilterHistori=lebarkan(['filter-tgl-start','filter-tgl-end'],window.terapkanFilterHistori);
 window.terapkanFilterPengeluaran=lebarkan(['filter-tgl-start-pengeluaran','filter-tgl-end-pengeluaran'],window.terapkanFilterPengeluaran);
+/* Jurnal & Laporan Keuangan: perluas rentang data yang dimuat bila filter keluar dari rentang awal, lalu render ulang */
+function lebarkanRentang(dari,sampai,orig,ctx,args){
+  if(!R.dari)initR();
+  const perlu=(dari&&dari<R.dari)||(sampai&&sampai>R.sampai);
+  if(!perlu||R.busy)return orig.apply(ctx,args);
+  R.busy=1;if(dari&&dari<R.dari)R.dari=dari;if(sampai&&sampai>R.sampai)R.sampai=sampai;
+  Promise.all([muatHistoriServer(),muatDetailTransaksiServer(),muatPengeluaranServer()]).catch(()=>{}).finally(()=>{R.busy=0;orig.apply(ctx,args);});
+}
+const rj0=window.renderJurnal;
+if(rj0)window.renderJurnal=function(){
+  const b=($('filter-jurnal-bulan')||{}).value||'',t=(($('filter-jurnal-tahun')||{}).value||'').trim();
+  let d='',s='';
+  if(/^\d{4}$/.test(t)){if(b){d=t+'-'+b+'-01';s=t+'-'+b+'-'+String(new Date(+t,+b,0).getDate()).padStart(2,'0');}else{d=t+'-01-01';s=t+'-12-31';}}
+  else if(b){/* tahun belum diisi: bulan tidak bisa ditentukan rentangnya */}
+  return lebarkanRentang(d,s,rj0,this,arguments);
+};
+const rk0=window.renderLaporanKeuangan;
+if(rk0)window.renderLaporanKeuangan=function(){
+  return lebarkanRentang(($('filter-keuangan-start')||{}).value||'',($('filter-keuangan-end')||{}).value||'',rk0,this,arguments);
+};
 
 /* ---------- HUTANG PELANGGAN: JATUH TEMPO + CICILAN ---------- */
 const st=$('status-bayar');
