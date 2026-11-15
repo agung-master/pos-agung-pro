@@ -6,7 +6,7 @@
 // ==================================================================================
 // >>>>>>>>>>  TEMPEL URL CODE.GS (WEB APP, berakhiran /exec) DI BAWAH INI  <<<<<<<<<<
 // ==================================================================================
-const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbweHT6C6BIVq-gfRmOv2e88jAtE-zi96ZjoH9LzEA0h8K5sBbET_FJRJKDzJne5h5mq/exec";
+const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwXuvKvUZ7la1RmrRehVCfniqxkJVqVUnbRGYE8PhNHtiE4kxade7J8_F-QJBjdQqe3/exec";
 // >>>>>>>>>>  SELESAI. Ini SATU-SATUNYA tempat URL diisi (dipakai kasir dan halaman pesan pelanggan)  <<<<<<<<<<
 
 // MODE PELANGGAN (Pesan di Meja): dibuka dari QR meja, yaitu alamat aplikasi ini + ?c=..&m=..&k=..
@@ -4929,7 +4929,7 @@ async function prosesPembayaran(){
   {const _mm=memberAktif();
    window._memberSnap=_mm?{nama:_mm.Nama,no:_mm.No_Member,level:_mm.Level,poinAwal:parseFloat(_mm.Poin)||0,poinPakai:poinDigunakan,berlaku:(window.poinBerlakuBaru?window.poinBerlakuBaru():''),
      poinDapat:(document.getElementById('status-bayar').value==='Lunas'?Math.floor(Math.max(0,grandTotal-tipNominal)/(parseFloat(pengaturanToko.poin_per_nominal)||10000)):0)}:null;}
-  const totDis=totDisItem+dG+dV;
+  const totDis=Math.min(sub,totDisItem+dG+dV); // diskon tercatat tidak boleh melebihi subtotal
   let detStr=`Subtotal: ${sub}`;
   if(totDisItem>0)detStr+=` - DiskonItem: ${totDisItem}`;
   if(dG>0)detStr+=` - DiskonGlobal: ${dG}`;
@@ -5764,7 +5764,7 @@ const URLX=()=>APPS_SCRIPT_URL;
 
 /* ---------- OFFLINE: cache GET + antrian transaksi ---------- */
 const f0=window.fetchJSON,QK='ao_q',getQ=()=>{try{return JSON.parse(localStorage.getItem(QK)||'[]');}catch(e){return[];}},setQ=q=>localStorage.setItem(QK,JSON.stringify(q));
-const netErr=e=>!navigator.onLine||e.name==='TypeError'||e.name==='AbortError';
+const netErr=e=>!navigator.onLine||e.name==='TypeError'||e.name==='AbortError'||/Gagal terhubung|tidak merespons/i.test(String(e&&e.message||''));
 const pseudo=b=>({ID_Transaksi:b.id_transaksi,Tanggal:(b.tanggal_waktu||'').split(' ')[0],Waktu:(b.tanggal_waktu||'').split(' ')[1]||'',Kasir:b.kasir,Metode_Pembayaran:b.metode_pembayaran,Status_Bayar:b.status_bayar,Subtotal:b.subtotal,Diskon:b.diskon,Total:b.total,Nama_Pembeli:b.nama_pembeli,Bayar_Tunai:b.bayar_tunai,Bayar_QRIS:b.bayar_qris,Bayar_Transfer:b.bayar_transfer,Bayar_Kartu:b.bayar_kartu,PPN:b.ppn,Jatuh_Tempo:b.jatuh_tempo||'',Terbayar:0,Catatan:'⏳ menunggu sinkron'});
 const kurangiStok=b=>(b.items||[]).forEach(it=>{const m=masterMenu.find(x=>String(x.ID_Menu)===String(it.id_menu));if(m)m.Stok=Math.max(0,(parseFloat(m.Stok)||0)-(+it.jumlah||0));});
 function updQ(){const n=getQ().length;let c=$('ao-q');if(!c){document.body.insertAdjacentHTML('beforeend','<div id="ao-q" onclick="aoSinkron()"></div>');c=$('ao-q');}c.style.display=n?'block':'none';c.innerHTML='<i class="fa-solid fa-rotate"></i> '+n+' transaksi menunggu sinkron (ketuk untuk kirim)';}
