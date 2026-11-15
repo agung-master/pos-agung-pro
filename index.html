@@ -6,7 +6,7 @@
 // ==================================================================================
 // >>>>>>>>>>  TEMPEL URL CODE.GS (WEB APP, berakhiran /exec) DI BAWAH INI  <<<<<<<<<<
 // ==================================================================================
-const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwp9vpUAGffiIP7LM-b4SE2ZAfXyAXPQdbsQvXIvFk0dXirvriLo3X7PRkGcAELsnSH/exec";
+const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbweHT6C6BIVq-gfRmOv2e88jAtE-zi96ZjoH9LzEA0h8K5sBbET_FJRJKDzJne5h5mq/exec";
 // >>>>>>>>>>  SELESAI. Ini SATU-SATUNYA tempat URL diisi (dipakai kasir dan halaman pesan pelanggan)  <<<<<<<<<<
 
 // MODE PELANGGAN (Pesan di Meja): dibuka dari QR meja, yaitu alamat aplikasi ini + ?c=..&m=..&k=..
@@ -2298,6 +2298,7 @@ function initSortableMenu(){
   if(!grid)return;
   const saved=localStorage.getItem('artofie_menu_order');
   if(saved){try{const arr=JSON.parse(saved);arr.forEach(id=>{const el=document.querySelector(`.btn-dash[data-id="${id}"]`);if(el)grid.appendChild(el);});document.querySelectorAll('.btn-dash').forEach(el=>{if(!arr.includes(el.dataset.id))grid.appendChild(el);});}catch(e){}}
+  if(typeof Sortable==='undefined')return; // CDN gagal dimuat (offline): jangan hentikan window.onload
   new Sortable(grid,{animation:150,ghostClass:'sortable-ghost',handle:'.drag-handle',onEnd:function(){if(window.__dashFilterAktif)return;let arr=[];grid.querySelectorAll('.btn-dash').forEach(el=>{arr.push(el.dataset.id);});localStorage.setItem('artofie_menu_order',JSON.stringify(arr));}});
 }
 
@@ -2543,6 +2544,7 @@ function exportProdukCSV(){
 document.getElementById('file-import-csv').addEventListener('change', function(e) {
   const file = e.target.files[0];
   if (!file) return;
+  if (typeof Papa === 'undefined') { alert('Pustaka CSV belum termuat. Periksa koneksi internet lalu muat ulang halaman.'); e.target.value=''; return; }
   Papa.parse(file, {
     header: true,
     skipEmptyLines: true,
@@ -2728,7 +2730,7 @@ async function muatResepHPP(){
     masterMenu.forEach(m=>{
       if(String(m.ID_Menu).startsWith("KUST-"))return;
       const tipe=m.Tipe_Produk||"Lainnya";
-      if(tipe==="Makanan"||tipe==="Minuman")sel.innerHTML+=`<option value="${m.ID_Menu}">[${tipe}] ${m.Nama_Menu} (Rp ${formatRupiah(m.Harga)})</option>`;
+      if(tipe==="Makanan"||tipe==="Minuman")sel.innerHTML+=`<option value="${escH(m.ID_Menu)}">[${escH(tipe)}] ${escH(m.Nama_Menu)} (Rp ${formatRupiah(m.Harga)})</option>`;
     });
     if(cur)sel.value=cur;
     const bs=document.getElementById('resep-bahan-select');
@@ -5488,7 +5490,7 @@ function renderAuditLog(){
   a.forEach(l=>{
     const item=document.createElement('div');
     item.className='audit-log-item';
-    item.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;"><strong style="color:#0f172a;font-size:11px;"><i class="fa-solid fa-user"></i> ${l.User||'system'}</strong><span style="color:#94a3b8;font-size:10px;">${l.Waktu||'-'}</span></div><div style="color:#0284c7;font-weight:bold;font-size:11px;margin-bottom:2px;">${l.Aksi||'-'}</div><div style="color:#64748b;font-size:10px;">${l.Detail||'-'}</div>`;
+    item.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;"><strong style="color:#0f172a;font-size:11px;"><i class="fa-solid fa-user"></i> ${escH(l.User||'system')}</strong><span style="color:#94a3b8;font-size:10px;">${escH(l.Waktu||'-')}</span></div><div style="color:#0284c7;font-weight:bold;font-size:11px;margin-bottom:2px;">${escH(l.Aksi||'-')}</div><div style="color:#64748b;font-size:10px;">${escH(l.Detail||'-')}</div>`;
     box.appendChild(item);
   });
 }
