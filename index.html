@@ -4,9 +4,9 @@
 <meta charset="UTF-8">
 <script>
 // ==================================================================================
-// >>>>>>>>>>  TEMPEL URL CODE.GS (WEB APP, berakhiran /exec) DI BAWAH INI  <<<<<<<<<<
+// >>>>>>>>>>  TEMPEL DISINI URL CODE.GS (WEB APP, berakhiran /exec) DI BAWAH INI  <<<<<<<<<<
 // ==================================================================================
-const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzSCYfbODpF__DcvpUZI2iTTfhhuoyTfMihp9PAbv2D4hR0wr6K578y9yqEv3Uy3hkN/exec";
+const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzl_il5z146KdeBDBFh1sM_R3l5gt8w8yuNlWqtZt8bbbO0T4-XuUunznHlngPsRHMV/exec";
 // >>>>>>>>>>  SELESAI. Ini SATU-SATUNYA tempat URL diisi (dipakai kasir dan halaman pesan pelanggan)  <<<<<<<<<<
 
 // MODE PELANGGAN (Pesan di Meja): dibuka dari QR meja, yaitu alamat aplikasi ini + ?c=..&m=..&k=..
@@ -4735,7 +4735,7 @@ function updateUIKasir(){
       const bq=parseFloat(p.Bonus_Qty)||1;
       const dp=parseFloat(p.Diskon_Persen)||0;
       if(tp==='Min_Belanja_Nominal_Gratis_Produk'){
-        const min=sq||100000,kel=Math.floor(sub/min);
+        const min=parseFloat(p.Syarat_Qty)||100000,kel=Math.floor(sub/min);
         if(kel>0){const pb=masterMenu.find(m=>String(m.ID_Menu).trim()===idT);if(pb)keranjang.push({ID_Menu:pb.ID_Menu,Nama_Menu:`${pb.Nama_Menu} (BONUS)`,Harga:0,qty:kel*bq,isBonus:true,catatan:"Bonus"});}
       }else if(tp==='Beli_X_Gratis_Y'){
         const ti=keranjang.find(k=>String(k.ID_Menu).trim()===idT&&!k.isBonus);
@@ -5990,7 +5990,7 @@ if(si){si.parentElement.insertAdjacentHTML('afterend','<div style="margin-bottom
 const ps0=window.prosesSuksesLogin;if(ps0)window.prosesSuksesLogin=function(){ps0.apply(this,arguments);[1500,4000].forEach(t=>setTimeout(fillSel,t));};
 const ss0=window.simpanSaldoAwal;window.simpanSaldoAwal=function(){localStorage.setItem('ao_shift',$('input-shift').value);localStorage.setItem('ao_mulai',new Date().toTimeString().slice(0,5));ss0.apply(this,arguments);};
 const f1=window.fetchJSON;window.fetchJSON=function(u,o){
-  if(o&&typeof o.body==='string'&&/"(simpanTransaksi|simpanPengeluaran|simpanLaporanTutupKas)"/.test(o.body)){try{const b=JSON.parse(o.body);b.shift=getShift();o=Object.assign({},o,{body:JSON.stringify(b)});}catch(e){}}
+  if(o&&typeof o.body==='string'&&/"(simpanTransaksi|simpanPengeluaran|simpanLaporanTutupKas)"/.test(o.body)){try{const b=JSON.parse(o.body);b.shift=getShift();if(/"(simpanPengeluaran|simpanLaporanTutupKas)"/.test(o.body)&&!b.cabang&&window.cabangAktifId)b.cabang=window.cabangAktifId();o=Object.assign({},o,{body:JSON.stringify(b)});}catch(e){}}
   return f1.call(this,u,o);};
 window.gantiShift=function(){const n=prompt('Pilih shift ('+SH().join(' / ')+'):',getShift()),v=SH().find(x=>lc(x)===lc(n));
   if(v){localStorage.setItem('ao_shift',v);tkAt=0;updateDashboard();}else if(n)alert('Shift tidak dikenal.');};
