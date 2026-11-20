@@ -6,7 +6,7 @@
 // ==================================================================================
 // >>>>>>>>>>  TEMPEL DISINI URL CODE.GS (WEB APP, berakhiran /exec) DI BAWAH INI  <<<<<<<<<<
 // ==================================================================================
-const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzWrSFEwRcVqeHNMczFgKj0iQUBuwc9R6cydPAjwJa35WuiTbStc4ruRL1TtAHr34xz/exec";
+const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwXF6xMxXx2zx65514Gz3NrvxjCDB2QaAegUw84cMAzVyu-BbYKqetQdY0IKHKdTrLv/exec";
 // >>>>>>>>>>  SELESAI. Ini SATU-SATUNYA tempat URL diisi (dipakai kasir dan halaman pesan pelanggan)  <<<<<<<<<<
 
 // MODE PELANGGAN (Pesan di Meja): dibuka dari QR meja, yaitu alamat aplikasi ini + ?c=..&m=..&k=..
@@ -27,7 +27,7 @@ const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzWrSFEwRcVqeHN
   document.documentElement.appendChild(fr);
 })();
 </script>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="theme-color" content="#008700">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -56,6 +56,7 @@ body{
   display:flex;
   flex-direction:column;
   overflow-x:hidden;
+  padding-left:env(safe-area-inset-left,0px);padding-right:env(safe-area-inset-right,0px);
   overflow-y:auto;
 }
 .container-max {
@@ -4986,7 +4987,7 @@ function susunStruk(bayar,kembali){
   const now=new Date();
   const wkt=`${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}:${String(now.getSeconds()).padStart(2,'0')}`;
   const nama=pengaturanToko.nama_toko||"ARTOFIE";
-  teksStrukRawBT="======= "+nama.toUpperCase()+" =======\n";
+  {const _hd=nama.toUpperCase();teksStrukRawBT=_hd.length<=14?"======= "+_hd+" =======\n":"================================\n"+_hd+"\n================================\n";}
   if(window._cabangNama&&window.daftarCabang&&window.daftarCabang.length>1)teksStrukRawBT+="Cabang: "+window._cabangNama+"\n";
   if(pengaturanToko.alamat)teksStrukRawBT+=pengaturanToko.alamat+"\n";
   if(pengaturanToko.telepon)teksStrukRawBT+="Telp: "+pengaturanToko.telepon+"\n";
