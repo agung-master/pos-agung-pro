@@ -6,7 +6,7 @@
 // ==================================================================================
 // >>>>>>>>>>  TEMPEL DISINI URL CODE.GS (WEB APP, berakhiran /exec) DI BAWAH INI  <<<<<<<<<<
 // ==================================================================================
-const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycby_gBaS6sjNSHWHInuS-q19AlxG5KemmcBMEo78aUCpg3kZ3ETW8g0H938kVWUYIufw/exec";
+const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyXkbVquJTneBwwOUvwHN3uMEK5ZEE-vGNybBRW9KSNem-0yYaiHwtU3YCuHrW9Z7rl/exec";
 // >>>>>>>>>>  SELESAI. Ini SATU-SATUNYA tempat URL diisi (dipakai kasir dan halaman pesan pelanggan)  <<<<<<<<<<
 
 // MODE PELANGGAN (Pesan di Meja): dibuka dari QR meja, yaitu alamat aplikasi ini + ?c=..&m=..&k=..
@@ -2235,6 +2235,18 @@ let lastPromoDiskonRp=-1,lastPromoDiskonPersen=-1;
 let bahanBakuMaster=[],resepMaster=[],supplierMaster=[],pembelianItems=[],returData=null;
 
 const formatRupiah=(a)=>new Intl.NumberFormat('id-ID').format(a);
+// Mengurai angka ketikan pengguna berformat Indonesia: "30.000" -> 30000, "30.000,50" -> 30000.5, "1,5" -> 1.5, "30000" -> 30000. Hasil NaN bila bukan angka.
+function angkaID(v){
+  let s=String(v==null?'':v).trim().replace(/[^\d.,\-]/g,'');
+  if(!s)return NaN;
+  const neg=s.charAt(0)==='-';s=s.replace(/-/g,'');
+  const adaT=s.indexOf('.')>-1,adaK=s.indexOf(',')>-1;
+  if(adaT&&adaK){s=s.lastIndexOf(',')>s.lastIndexOf('.')?s.replace(/\./g,'').replace(',','.'):s.replace(/,/g,'');}
+  else if(adaT){if(/^\d{1,3}(\.\d{3})+$/.test(s))s=s.replace(/\./g,'');}
+  else if(adaK){s=/^\d{1,3}(,\d{3})+$/.test(s)?s.replace(/,/g,''):s.replace(',','.');}
+  const n=parseFloat(s);
+  return isNaN(n)?NaN:(neg?-n:n);
+}
 
 function getLocalDateString(){const n=new Date();return `${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}-${String(n.getDate()).padStart(2,'0')}`;}
 
@@ -2652,8 +2664,8 @@ function renderBahanBakuList(){
       <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;">
         <div style="flex:1;min-width:0;">
           <div style="font-weight:bold;color:#9a3412;font-size:13px;">${escH(b.Nama_Bahan)}</div>
-          <div style="font-size:11px;color:#64748b;margin-top:3px;">ID: ${b.ID_Bahan}</div>
-          <div style="font-size:11px;color:#475569;margin-top:3px;">Rp ${formatRupiah(b.Harga_Satuan)} / ${b.Satuan}</div>
+          <div style="font-size:11px;color:#64748b;margin-top:3px;">ID: ${escH(b.ID_Bahan)}</div>
+          <div style="font-size:11px;color:#475569;margin-top:3px;">Rp ${formatRupiah(b.Harga_Satuan)} / ${escH(b.Satuan)}</div>
           <div style="font-size:11px;color:${low?'#dc2626':'#475569'};margin-top:3px;">Stok: <b>${st} ${b.Satuan}</b>${low?' (RENDAH)':''}</div>
           ${window.badgeKadaluarsa?window.badgeKadaluarsa(b):''}
         </div>
@@ -2767,7 +2779,7 @@ function renderResepForMenu(){
     const q=parseFloat(r.Jumlah_Digunakan)||0;
     const sub=h*q;
     const row=document.createElement('div');row.className='resep-row';
-    row.innerHTML=`<div style="flex:1;"><div style="font-weight:bold;color:#1e293b;">${escH(r.Nama_Bahan)}</div><div style="font-size:10px;color:#64748b;">${q} ${r.Satuan} × Rp ${formatRupiah(h)} = Rp ${formatRupiah(sub)}</div></div><button onclick="hapusResepItem('${jsq(idM)}','${jsq(r.ID_Bahan)}','${jsArg(r.Nama_Bahan)}')" style="background:#fee2e2;color:#dc2626;border:none;width:28px;height:28px;border-radius:4px;cursor:pointer;"><i class="fa-solid fa-trash"></i></button>`;
+    row.innerHTML=`<div style="flex:1;"><div style="font-weight:bold;color:#1e293b;">${escH(r.Nama_Bahan)}</div><div style="font-size:10px;color:#64748b;">${q} ${escH(r.Satuan)} × Rp ${formatRupiah(h)} = Rp ${formatRupiah(sub)}</div></div><button onclick="hapusResepItem('${jsq(idM)}','${jsq(r.ID_Bahan)}','${jsArg(r.Nama_Bahan)}')" style="background:#fee2e2;color:#dc2626;border:none;width:28px;height:28px;border-radius:4px;cursor:pointer;"><i class="fa-solid fa-trash"></i></button>`;
     list.appendChild(row);
   });
 }
@@ -2905,10 +2917,10 @@ async function bukaModalPembelian(){
   if(masterMenu.length===0)await muatMenuServer();
   const sup=document.getElementById('pembelian-supplier');
   sup.innerHTML='<option value="">-- Pilih Supplier --</option>';
-  supplierMaster.forEach(s=>sup.innerHTML+=`<option value="${s.ID_Supplier}">${escH(s.Nama_Supplier)}</option>`);
+  supplierMaster.forEach(s=>sup.innerHTML+=`<option value="${escH(s.ID_Supplier)}">${escH(s.Nama_Supplier)}</option>`);
   const pr=document.getElementById('pembelian-produk-select');
   pr.innerHTML='';
-  masterMenu.forEach(m=>{pr.innerHTML+=`<option value="${m.ID_Menu}">[${m.Tipe_Produk||'-'}] ${escH(m.Nama_Menu)} (stok: ${m.Stok})</option>`;});
+  masterMenu.forEach(m=>{pr.innerHTML+=`<option value="${escH(m.ID_Menu)}">[${escH(m.Tipe_Produk||'-')}] ${escH(m.Nama_Menu)} (stok: ${m.Stok})</option>`;});
   pembelianItems=[];renderPembelianItems();
   document.getElementById('modal-pembelian').style.display='flex';
 }
@@ -3014,10 +3026,10 @@ function bukaModalReturPembelian(){
   if(masterMenu.length===0) muatMenuServer();
   const selSup=document.getElementById('retur-beli-supplier');
   selSup.innerHTML='<option value="">-- Pilih Supplier --</option>';
-  supplierMaster.forEach(s=>selSup.innerHTML+=`<option value="${s.ID_Supplier}">${escH(s.Nama_Supplier)}</option>`);
+  supplierMaster.forEach(s=>selSup.innerHTML+=`<option value="${escH(s.ID_Supplier)}">${escH(s.Nama_Supplier)}</option>`);
   const selProd=document.getElementById('retur-beli-produk');
   selProd.innerHTML='<option value="">-- Pilih Produk --</option>';
-  masterMenu.forEach(m=>selProd.innerHTML+=`<option value="${m.ID_Menu}">${escH(m.Nama_Menu)}</option>`);
+  masterMenu.forEach(m=>selProd.innerHTML+=`<option value="${escH(m.ID_Menu)}">${escH(m.Nama_Menu)}</option>`);
   document.getElementById('retur-beli-qty').value='1';
   document.getElementById('retur-beli-nominal').value='';
   document.getElementById('retur-beli-alasan').value='';
@@ -3339,6 +3351,7 @@ async function bukaEditMenu(id,btn){
   document.getElementById('title-form-menu').innerHTML='<i class="fa-solid fa-pen-to-square"></i> Edit Produk';
   const ls=document.getElementById('lbl-stok-admin');if(ls)ls.textContent='Stok Saat Ini';
   set('nama',m.Nama_Menu);set('tipe',m.Tipe_Produk);set('harga',m.Harga);set('hpp',m.HPP);set('stok',m.Stok);set('stok-min',m.Stok_Minimum);
+  window._editAwal={stok:parseFloat(m.Stok)||0,hpp:parseFloat(m.HPP)||0};
   set('sku',m.SKU);set('barcode',m.Barcode);set('merek',m.Merek);set('ukuran',m.Ukuran);set('warna',m.Warna);
   set('lokasi',m.Lokasi_Rak);set('id-induk',m.ID_Induk);set('nama-varian',m.Nama_Varian);set('gambar',m.Gambar_URL);
   set('supplier',m.Supplier_ID);set('status',m.Status_Aktif||'Aktif');document.getElementById('admin-menu-supplier').dataset.want=m.Supplier_ID||'';
@@ -3399,6 +3412,10 @@ async function simpanMenuBaruServer(){
     status_aktif:document.getElementById('admin-menu-status').value,
     actor:userKasirAktif
   };
+  if(mode==='edit'&&window._editAwal){ // stok/HPP di form bisa sudah usang (ada penjualan atau pembelian sejak form dibuka): kirim hanya jika diubah
+    if(payload.stok===window._editAwal.stok)delete payload.stok;
+    if(payload.hpp===window._editAwal.hpp)delete payload.hpp;
+  }
   try{const res=await fetchJSON(APPS_SCRIPT_URL,{method:"POST",body:JSON.stringify(payload)});
     if(res.status==="success"){alert("Produk tersimpan!");tutupModalTambahMenu();await muatMenuServer();}
     else alert("Gagal: "+(res.message||"Unknown"));
@@ -3826,7 +3843,7 @@ async function bukaModalPromo(p){
   if(!masterMenu||masterMenu.length===0)try{masterMenu=await fetchJSON(APPS_SCRIPT_URL+"?action=getMenu&t="+Date.now())||[];}catch(e){masterMenu=[];}
   const sp=document.getElementById('promo-produk');
   sp.innerHTML='<option value="">-- Pilih Produk --</option>';
-  masterMenu.forEach(m=>{sp.innerHTML+=`<option value="${m.ID_Menu}">${escH(m.Nama_Menu)} (Rp ${formatRupiah(m.Harga)})</option>`;});
+  masterMenu.forEach(m=>{sp.innerHTML+=`<option value="${escH(m.ID_Menu)}">${escH(m.Nama_Menu)} (Rp ${formatRupiah(m.Harga)})</option>`;});
   document.getElementById('promo-nama').value='';
   document.getElementById('promo-tipe').value='Diskon_Nominal_Produk';
   document.getElementById('promo-syarat-qty').value='2';
@@ -4135,7 +4152,7 @@ function buildDetailRow(trx){
   else dets.forEach(d=>{
     html+=`<tr><td style="padding:6px 8px;font-size:11px;color:#1e293b;">${escH(d.Nama_Menu)}${d.Catatan&&d.Catatan!=='-'?`<br><span style="font-size:9px;color:#0284c7;"><i class="fa-solid fa-pen"></i> ${escH(d.Catatan)}</span>`:''}</td><td style="padding:6px 8px;font-size:11px;text-align:center;">${d.Jumlah}</td><td style="padding:6px 8px;font-size:11px;text-align:right;">Rp ${formatRupiah(d.Harga_Satuan)}</td><td style="padding:6px 8px;font-size:11px;text-align:right;font-weight:bold;">Rp ${formatRupiah(d.Total_Harga)}</td></tr>`;
   });
-  return `<div class="trx-detail-container"><table class="trx-item-table"><thead><tr><th>Produk</th><th style="text-align:center;">Qty</th><th style="text-align:right;">Harga</th><th style="text-align:right;">Subtotal</th></tr></thead><tbody>${html}</tbody></table><div style="display:flex;flex-direction:column;gap:2px;font-size:11px;color:#475569;padding:0 8px;border-top:1px dashed #cbd5e1;padding-top:8px;"><div style="display:flex;justify-content:space-between;"><span>Subtotal:</span> <b>Rp ${formatRupiah(trx.Subtotal||0)}</b></div><div style="display:flex;justify-content:space-between;color:#dc2626;"><span>Diskon:</span> <b>- Rp ${formatRupiah(trx.Diskon||0)}</b></div><div style="display:flex;justify-content:space-between;font-size:13px;color:#0f172a;margin-top:4px;"><span>Total:</span> <b>Rp ${formatRupiah(trx.Total||0)}</b></div><div style="display:flex;justify-content:space-between;margin-top:8px;"><span>Metode: <b>${trx.Metode_Pembayaran}</b></span>${trx.Kode_Voucher?`<span>Voucher: <b>${trx.Kode_Voucher}</b></span>`:''}<span style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;"><button onclick="cetakUlangStruk('${escH(trx.ID_Transaksi)}','histori')" style="background:#0f766e;color:#fff;border:none;padding:5px 10px;border-radius:4px;font-size:10px;cursor:pointer;"><i class="fa-solid fa-print"></i> Cetak Ulang</button><button onclick="showDetailTransaksi('${jsq(trx.ID_Transaksi)}')" style="background:#0284c7;color:#fff;border:none;padding:5px 10px;border-radius:4px;font-size:10px;cursor:pointer;"><i class="fa-solid fa-eye"></i> Laba</button></span></div></div></div>`;
+  return `<div class="trx-detail-container"><table class="trx-item-table"><thead><tr><th>Produk</th><th style="text-align:center;">Qty</th><th style="text-align:right;">Harga</th><th style="text-align:right;">Subtotal</th></tr></thead><tbody>${html}</tbody></table><div style="display:flex;flex-direction:column;gap:2px;font-size:11px;color:#475569;padding:0 8px;border-top:1px dashed #cbd5e1;padding-top:8px;"><div style="display:flex;justify-content:space-between;"><span>Subtotal:</span> <b>Rp ${formatRupiah(trx.Subtotal||0)}</b></div><div style="display:flex;justify-content:space-between;color:#dc2626;"><span>Diskon:</span> <b>- Rp ${formatRupiah(trx.Diskon||0)}</b></div><div style="display:flex;justify-content:space-between;font-size:13px;color:#0f172a;margin-top:4px;"><span>Total:</span> <b>Rp ${formatRupiah(trx.Total||0)}</b></div><div style="display:flex;justify-content:space-between;margin-top:8px;"><span>Metode: <b>${escH(trx.Metode_Pembayaran)}</b></span>${trx.Kode_Voucher?`<span>Voucher: <b>${escH(trx.Kode_Voucher)}</b></span>`:''}<span style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;"><button onclick="cetakUlangStruk('${escH(trx.ID_Transaksi)}','histori')" style="background:#0f766e;color:#fff;border:none;padding:5px 10px;border-radius:4px;font-size:10px;cursor:pointer;"><i class="fa-solid fa-print"></i> Cetak Ulang</button><button onclick="showDetailTransaksi('${jsq(trx.ID_Transaksi)}')" style="background:#0284c7;color:#fff;border:none;padding:5px 10px;border-radius:4px;font-size:10px;cursor:pointer;"><i class="fa-solid fa-eye"></i> Laba</button></span></div></div></div>`;
 }
 
 function toggleHistoriRow(id){
@@ -4344,7 +4361,7 @@ function populateKasirCategories() {
   const set = new Set();
   masterMenu.forEach(m => set.add(m.Kategori || "Umum"));
   sel.innerHTML = '<option value="">Semua Kategori</option>';
-  Array.from(set).sort().forEach(k => sel.innerHTML += `<option value="${k}">${k}</option>`);
+  Array.from(set).sort().forEach(k => sel.innerHTML += `<option value="${escH(k)}">${escH(k)}</option>`);
   if(currentVal) sel.value = currentVal;
 }
 
@@ -4529,7 +4546,7 @@ function muatKatalogProduk(){
   if(selKat&&selKat.options.length<=1){
     const set=new Set();masterMenu.forEach(m=>set.add(m.Kategori||"Umum"));
     selKat.innerHTML='<option value="">Semua Kategori</option>';
-    set.forEach(k=>selKat.innerHTML+=`<option value="${k}">${k}</option>`);
+    set.forEach(k=>selKat.innerHTML+=`<option value="${escH(k)}">${escH(k)}</option>`);
   }
   const k=selKat?selKat.value.toLowerCase():"";
   const t=selTipe?selTipe.value.toLowerCase():"";
@@ -4601,7 +4618,7 @@ function bukaModalCetakBarcode() {
   const sel = document.getElementById('barcode-produk-select');
   sel.innerHTML = '';
   masterMenu.forEach(m => {
-    if(m.Barcode || m.SKU) sel.innerHTML += `<option value="${m.ID_Menu}">${escH(m.Nama_Menu)} (${m.Barcode || m.SKU})</option>`;
+    if(m.Barcode || m.SKU) sel.innerHTML += `<option value="${escH(m.ID_Menu)}">${escH(m.Nama_Menu)} (${escH(m.Barcode || m.SKU)})</option>`;
   });
   document.getElementById('barcode-qty').value = '1';
   document.getElementById('modal-cetak-barcode').style.display = 'flex';
@@ -4669,7 +4686,7 @@ function tampilkanVariantSelector(variants){
     if(disabled)opt.style.opacity='0.5';
     opt.onclick=function(){if(!disabled){tutupModalVariantSelector();tambahKeKeranjang(v);}};
     const varName=v.Nama_Varian||[v.Ukuran,v.Warna].filter(Boolean).join(' - ')||v.Nama_Menu;
-    opt.innerHTML=`<div class="v-info"><div class="v-name">${varName}</div><div class="v-meta">SKU: ${v.SKU||'-'} · Stok: ${sisaV} ${v.Satuan||'pcs'}${disabled?' (HABIS)':''}</div></div><div class="v-price">Rp ${formatRupiah(v.Harga)}</div>`;
+    opt.innerHTML=`<div class="v-info"><div class="v-name">${escH(varName)}</div><div class="v-meta">SKU: ${escH(v.SKU||'-')} · Stok: ${sisaV} ${escH(v.Satuan||'pcs')}${disabled?' (HABIS)':''}</div></div><div class="v-price">Rp ${formatRupiah(v.Harga)}</div>`;
     box.appendChild(opt);
   });
   document.getElementById('modal-variant-selector').style.display='flex';
@@ -4876,6 +4893,9 @@ async function prosesPembayaran(){
   if (totalBayar < grandTotal && document.getElementById('status-bayar').value === 'Lunas') {
     alert("Nominal pembayaran kurang dari Total!"); return;
   }
+  if (totalBayar > 0 && document.getElementById('status-bayar').value === 'Hutang') {
+    alert("Transaksi hutang tidak boleh berisi nominal pembayaran. Kosongkan kolom bayar, lalu catat pembayaran lewat menu Hutang (Bayar/Cicil)."); return;
+  }
 
   if(document.getElementById('status-bayar').value==='Hutang'){const nm=document.getElementById('nama-pembeli').value.trim();if(!nm||nm.toLowerCase()==='pelanggan umum'){alert("Transaksi hutang wajib mengisi nama pembeli.");return;}}
   let metodeTerpilih = "Cash"; 
@@ -4925,6 +4945,7 @@ async function prosesPembayaran(){
   const tipNominal = fnbN.tip;
   const ppnNominal = Math.max(0,Math.round((sub - totDisItem - dG - dV + svcNominal) * (ppnPersen/100)));
   window._fnbSnap={svc:svcNominal,tip:tipNominal,meja:fnbN.meja,layanan:fnbN.layanan,ppn:ppnNominal};
+  window._rcSnap={dG:dG,dV:dV,kode:(voucherAktifTerpakai&&voucherAktifTerpakai.Kode_Voucher)||''};
   window._hasilTrx=null;
   const poinDigunakan = parseFloat(document.getElementById('input-poin-digunakan').value) || 0;
 
@@ -5003,13 +5024,17 @@ function susunStruk(bayar,kembali){
     if(k.catatan)teksStrukRawBT+="  *"+k.catatan+"\n";
   });
   teksStrukRawBT+="--------------------------------\n";
+  {const rc=window._rcSnap||{};
+   if(rc.dG>0)teksStrukRawBT+="Diskon : -Rp "+formatRupiah(rc.dG)+"\n";
+   if(rc.dV>0)teksStrukRawBT+="Voucher"+(rc.kode?" ("+rc.kode+")":"")+" : -Rp "+formatRupiah(rc.dV)+"\n";}
+  {const sn0=window._fnbSnap||{};if(sn0.svc>0)teksStrukRawBT+="Service : Rp "+formatRupiah(sn0.svc)+"\n";} // service dihitung sebelum PPN (PPN atas subtotal+service)
   const ppnN = parseFloat(document.getElementById('input-ppn').value) || 0;
   if (ppnN > 0) {
     const sub = keranjang.reduce((s,k)=>s+(k.isBonus?0:(k.Harga*k.qty)),0);
     const nominalPpn = (window._fnbSnap&&window._fnbSnap.ppn!==undefined)?window._fnbSnap.ppn:sub * (ppnN/100);
     teksStrukRawBT+="PPN ("+ppnN+"%) : Rp "+formatRupiah(nominalPpn)+"\n";
   }
-  {const sn=window._fnbSnap||{};if(sn.svc>0)teksStrukRawBT+="Service : Rp "+formatRupiah(sn.svc)+"\n";if(sn.tip>0)teksStrukRawBT+="Tip     : Rp "+formatRupiah(sn.tip)+"\n";}
+  {const sn=window._fnbSnap||{};if(sn.tip>0)teksStrukRawBT+="Tip     : Rp "+formatRupiah(sn.tip)+"\n";}
   const poin = parseFloat(document.getElementById('input-poin-digunakan').value) || 0;
   if (poin > 0) teksStrukRawBT+="Poin Potong : -Rp "+formatRupiah(poin* (parseFloat(pengaturanToko.nilai_poin)||100))+"\n";
   teksStrukRawBT+="TOTAL : Rp "+formatRupiah(grandTotal)+"\n";
@@ -5051,8 +5076,11 @@ function bukaModalOrderTersimpan(){
 }
 function tutupModalOrderTersimpan(){document.getElementById('modal-order-tersimpan').style.display='none';}
 function muatHoldOrder(i){
+  if(!holdOrderList[i])return;
+  const keranjangLama=keranjang.length>0?JSON.parse(JSON.stringify(keranjang)):null;
   keranjang=JSON.parse(JSON.stringify(holdOrderList[i].items));
   holdOrderList.splice(i,1);
+  if(keranjangLama)holdOrderList.push({id:"HOLD-"+Date.now(),items:keranjangLama,waktu:new Date().toLocaleTimeString()}); // keranjang yang sedang berjalan ikut ditahan agar tidak hilang
   localStorage.setItem('artofie_hold_orders', JSON.stringify(holdOrderList));
   tutupModalOrderTersimpan();switchTab(3);updateUIKasir();
 }
@@ -5192,7 +5220,8 @@ function renderLaporanKeuangan(){
     if(e&&tgl>e)return;
     tpn+=parseFloat(p.Nominal)||0;
   });
-  (typeof returJualMaster!=="undefined"?returJualMaster:[]).forEach(r=>{const g=String(r.Tanggal||"").substring(0,10);if(s&&g<s)return;if(e&&g>e)return;tp-=parseFloat(r.Nominal_Retur)||0;});
+  {const hm={};detailTransaksiMaster.forEach(d=>{hm[String(d.ID_Transaksi)+"|"+String(d.ID_Menu)]=parseFloat(d.HPP_Satuan)||0;});
+   (typeof returJualMaster!=="undefined"?returJualMaster:[]).forEach(r=>{const g=String(r.Tanggal||"").substring(0,10);if(s&&g<s)return;if(e&&g>e)return;tp-=parseFloat(r.Nominal_Retur)||0;th-=(hm[String(r.ID_Transaksi)+"|"+String(r.ID_Menu)]||0)*(parseFloat(r.Jumlah)||0);});} // barang retur kembali ke stok: HPP-nya ikut dibalik
   const lk=tp-th,lb=lk-tpn;
   const mk=tp>0?(lk/tp*100):0,mb=tp>0?(lb/tp*100):0;
   const rh=tp>0?(th/tp*100):0,rp=tp>0?(tpn/tp*100):0;
@@ -5765,7 +5794,8 @@ const selisihHari=(a,b)=>Math.round((new Date(a)-new Date(b))/864e5);
 const URLX=()=>APPS_SCRIPT_URL;
 
 /* ---------- OFFLINE: cache GET + antrian transaksi ---------- */
-const f0=window.fetchJSON,QK='ao_q',getQ=()=>{try{return JSON.parse(localStorage.getItem(QK)||'[]');}catch(e){return[];}},setQ=q=>localStorage.setItem(QK,JSON.stringify(q));
+const f0=window.fetchJSON,QK='ao_q',getQ=()=>{try{return JSON.parse(localStorage.getItem(QK)||'[]');}catch(e){return[];}},aoBuangCache=()=>{try{Object.keys(localStorage).forEach(k=>{if(k.indexOf('ao_c_')===0)localStorage.removeItem(k);});if(typeof cacheBuangSemua==='function')cacheBuangSemua();}catch(e){}},
+  setQ=q=>{const s=JSON.stringify(q);try{localStorage.setItem(QK,s);}catch(e){aoBuangCache();localStorage.setItem(QK,s);}}; // antrean offline = transaksi pelanggan: bila kuota penuh, buang cache GET lebih dulu
 const netErr=e=>!navigator.onLine||e.name==='TypeError'||e.name==='AbortError'||/Gagal terhubung|tidak merespons/i.test(String(e&&e.message||''));
 const pseudo=b=>({ID_Transaksi:b.id_transaksi,Tanggal:(b.tanggal_waktu||'').split(' ')[0],Waktu:(b.tanggal_waktu||'').split(' ')[1]||'',Kasir:b.kasir,Metode_Pembayaran:b.metode_pembayaran,Status_Bayar:b.status_bayar,Subtotal:b.subtotal,Diskon:b.diskon,Total:b.total,Nama_Pembeli:b.nama_pembeli,Bayar_Tunai:b.bayar_tunai,Bayar_QRIS:b.bayar_qris,Bayar_Transfer:b.bayar_transfer,Bayar_Kartu:b.bayar_kartu,PPN:b.ppn,Jatuh_Tempo:b.jatuh_tempo||'',Terbayar:0,Catatan:'⏳ menunggu sinkron'});
 const kurangiStok=b=>(b.items||[]).forEach(it=>{const m=masterMenu.find(x=>String(x.ID_Menu)===String(it.id_menu));if(m)m.Stok=Math.max(0,(parseFloat(m.Stok)||0)-(+it.jumlah||0));});
@@ -5774,7 +5804,7 @@ window.fetchJSON=async function(u,o){
   o=o||{};const post=o.method==='POST',isTrx=post&&typeof o.body==='string'&&o.body.indexOf('"simpanTransaksi"')>0;
   if(isTrx){try{const b=JSON.parse(o.body);if(b.status_bayar==='Hutang')b.jatuh_tempo=($('jt-input')||{}).value||'';o=Object.assign({},o,{body:JSON.stringify(b)});}catch(e){}}
   const key='ao_c_'+String(u).replace(/[?&]t=\d+/,'').replace(URLX(),'');
-  try{const r=await f0(u,o);if(!post&&r&&r.status!=='error'){try{localStorage.setItem(key,JSON.stringify(r));}catch(e){}}return r;}
+  try{const r=await f0(u,o);if(!post&&r&&r.status!=='error'){try{const sC=JSON.stringify(r);if(sC.length<1200000)localStorage.setItem(key,sC);}catch(e){}}return r;}
   catch(e){
     if(!post){const c=localStorage.getItem(key);if(c&&netErr(e))return JSON.parse(c);}
     else if(isTrx&&netErr(e)){const b=JSON.parse(o.body);delete b.token;b._u=userKasirAktif;b.offline_sync=true;const q=getQ();if(!q.some(x=>x.id_transaksi===b.id_transaksi))q.push(b);setQ(q);kurangiStok(b);historiDataMaster.push(pseudo(b));updateDashboard();updQ();return{status:'success',message:'Tersimpan offline',offline:true};}
@@ -5835,7 +5865,8 @@ if(rk0)window.renderLaporanKeuangan=function(){
 /* ---------- HUTANG PELANGGAN: JATUH TEMPO + CICILAN ---------- */
 const st=$('status-bayar');
 if(st){st.insertAdjacentHTML('afterend','<input type="date" id="jt-input" class="input-box" title="Jatuh tempo" style="display:none;margin-top:6px">');
-  st.addEventListener('change',()=>{const j=$('jt-input');j.style.display=st.value==='Hutang'?'block':'none';if(st.value==='Hutang'&&!j.value)j.value=plus(7);});}
+  st.addEventListener('change',()=>{const j=$('jt-input');j.style.display=st.value==='Hutang'?'block':'none';if(st.value==='Hutang'&&!j.value)j.value=plus(7);
+    if(st.value==='Hutang'){['input-bayar-tunai','input-bayar-qris','input-bayar-transfer','input-bayar-kartu'].forEach(id=>{const e=$(id);if(e)e.value='';});try{hitungKembalian();}catch(_){}}});}
 const badge=(jt)=>{if(!jt)return'<span class="bdg">Tanpa jatuh tempo</span>';const s=selisihHari(jt,hari());return s<0?`<span class="bdg r">Terlambat ${-s} hari</span>`:s<=3?`<span class="bdg o">Jatuh tempo ${s?s+' hari lagi':'hari ini'}</span>`:`<span class="bdg g">Jatuh tempo ${escH(jt)}</span>`;};
 const listHutang=()=>historiDataMaster.filter(x=>String(x.Status_Bayar||'').toLowerCase()==='hutang').map(x=>({x,sisa:(parseFloat(x.Total)||0)-(parseFloat(x.Terbayar)||0)})).sort((a,b)=>(a.x.Jatuh_Tempo||'9999')>(b.x.Jatuh_Tempo||'9999')?1:-1);
 window.bukaModalDaftarHutang=function(){
@@ -5844,7 +5875,7 @@ window.bukaModalDaftarHutang=function(){
   $('modal-daftar-hutang').style.display='flex';
 };
 window.cicilHutang=async function(id,sisa){
-  const n=parseFloat(prompt('Nominal pembayaran (sisa Rp '+fmt(sisa)+'):',sisa));if(!(n>0))return;
+  const n=angkaID(prompt('Nominal pembayaran (sisa Rp '+fmt(sisa)+'):',sisa));if(!(n>0))return;
   const m=(prompt('Metode (Cash / QRIS / Transfer / Kartu):','Cash')||'').trim();if(!m)return;
   try{const r=await fetchJSON(URLX(),{method:'POST',body:JSON.stringify({action:'bayarCicilan',id_transaksi:id,nominal:n,metode_bayar:m})});
     if(r.status==='success'){alert(r.message+(r.sisa>0?' — sisa Rp '+fmt(r.sisa):''));await muatHistoriServer();bukaModalDaftarHutang();}else alert('Gagal: '+r.message);}catch(e){alert('Gagal: '+e.message);}
@@ -5894,7 +5925,7 @@ window.bukaHutangSupplier=async function(){
   }catch(e){box.innerHTML='<p style="color:red">Gagal: '+escH(e.message)+'</p>';}
 };
 window.bayarHS=async function(id,sisa){
-  const n=parseFloat(prompt('Nominal dibayar (sisa Rp '+fmt(sisa)+'):',sisa));if(!(n>0))return;const m=prompt('Metode (Cash / Transfer):','Cash')||'Cash';
+  const n=angkaID(prompt('Nominal dibayar (sisa Rp '+fmt(sisa)+'):',sisa));if(!(n>0))return;const m=prompt('Metode (Cash / Transfer):','Cash')||'Cash';
   try{const r=await fetchJSON(URLX(),{method:'POST',body:JSON.stringify({action:'bayarHutangSupplier',id_pembelian:id,nominal:n,metode_bayar:m})});
     if(r.status==='success'){alert(r.message);bukaHutangSupplier();}else alert('Gagal: '+r.message);}catch(e){alert('Gagal: '+e.message);}
 };
@@ -6521,7 +6552,7 @@ function muatKeKeranjang(o,mode,items){
   kosongkanKeranjang();
   items.forEach(it=>{
     const mm=masterMenu.find(m=>String(m.ID_Menu).trim()===String(it.id_menu).trim());
-    keranjang.push({ID_Menu:it.id_menu,Nama_Menu:it.nama_menu,Harga:it.harga_satuan,qty:it.jumlah,diskonTipe:it.diskon_tipe==='persen'?'persen':'nominal',diskonNilai:it.diskon_nilai||0,catatan:it.catatan||'',isBonus:false,Tipe_Produk:(mm&&mm.Tipe_Produk)||'Makanan'});
+    keranjang.push({ID_Menu:it.id_menu,Nama_Menu:it.nama_menu,Harga:it.harga_satuan,qty:it.jumlah,diskonTipe:it.diskon_tipe==='persen'?'persen':'nominal',diskonNilai:it.diskon_nilai||0,catatan:it.catatan||'',isBonus:false,Tipe_Produk:(mm&&mm.Tipe_Produk)||(String(it.id_menu).indexOf('KUST-')===0?'Lainnya':'Makanan')});
   });
   orderMejaAktif={id:o.ID_Order,meja:o.No_Meja,layanan:o.Tipe_Layanan,antrian:o.No_Antrian,mode:mode};
   $('nama-pembeli').value=o.Nama_Pembeli||'';
@@ -7076,12 +7107,14 @@ async function muat(diam){
   if(sedangMuat)return;sedangMuat=true;
   const cb=encodeURIComponent(cabangAktifId());
   let dariCache=false;
-  if(!diam&&mode!=='atur'){
-    // denah jarang berubah: tampilkan versi tersimpan dulu, lalu perbarui di latar belakang
-    const c=cacheBaca('denah');
-    if(c&&c.status==='success'){terapkanDenah(c);if(areas().indexOf(areaAktif)<0)areaAktif=areas()[0];renderAll();dariCache=true;}
-    else if($('dn-canvas'))$('dn-canvas').innerHTML='<div class="dn-msg">Memuat denah...</div>';
-  }
+  try{
+    if(!diam&&mode!=='atur'){
+      // denah jarang berubah: tampilkan versi tersimpan dulu, lalu perbarui di latar belakang
+      const c=cacheBaca('denah');
+      if(c&&c.status==='success'){terapkanDenah(c);if(areas().indexOf(areaAktif)<0)areaAktif=areas()[0];renderAll();dariCache=true;}
+      else if($('dn-canvas'))$('dn-canvas').innerHTML='<div class="dn-msg">Memuat denah...</div>';
+    }
+  }catch(eCache){dariCache=false;} // cache denah rusak: abaikan dan lanjut memuat dari server (jangan sampai sedangMuat macet selamanya)
   try{
     const tugas=[get('action=getDenahMeja&cabang='+cb),get('action=getOrderMeja&cabang='+cb),get('action=getReservasi&cabang='+cb)];
     if(qrAktif())tugas.push(get('action=getPesananQR&cabang='+cb));
