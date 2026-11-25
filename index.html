@@ -949,8 +949,8 @@ body{background:#eef4ff;background-image:radial-gradient(1100px 520px at 12% -8%
 @keyframes navPop{0%{transform:translate3d(0,6px,0) scale(.8)}60%{transform:translate3d(0,-3px,0) scale(1.2)}100%{transform:none}}
 
 /* ---------- HALAMAN, MODAL, TOAST ---------- */
-.page-content.active{animation:pageIn .38s var(--ease) both}
-@keyframes pageIn{from{opacity:0;transform:translate3d(0,14px,0)}to{opacity:1;transform:none}}
+.page-content.active{animation:pageIn .28s ease-out}
+@keyframes pageIn{from{opacity:0}to{opacity:1}}
 .modal-overlay{background:rgba(8,20,60,.62);animation:fadeIn .2s ease-out}
 @keyframes fadeIn{from{opacity:0}to{opacity:1}}
 .modal-box{border-radius:20px;border:1px solid rgba(147,197,253,.4);box-shadow:0 30px 70px -20px rgba(8,20,60,.55);animation:modalPop .32s var(--ease)}
