@@ -856,7 +856,7 @@ table{max-width:100%;}
 <!-- LOGIN -->
 <div id="page-login" class="auth-container">
 <div class="auth-card">
-<h2 id="login-judul" style="visibility:hidden">&nbsp;</h2><script>(function(){try{var c=localStorage.getItem('artofie_nama_login');if(c){var h=document.getElementById('login-judul');h.textContent=c;h.style.visibility='visible';}}catch(e){}})();</script>
+<h2 id="login-judul" style="visibility:hidden"><span id="login-judul-skel" style="visibility:visible;display:inline-block;height:.85em;width:110px;border-radius:8px;background:#e5e7eb;vertical-align:middle"></span></h2><script>(function(){try{var c=localStorage.getItem('artofie_nama_login');if(c){var h=document.getElementById('login-judul');h.textContent=c;h.style.visibility='visible';var s=document.getElementById('login-judul-skel');if(s)s.remove();}}catch(e){}})();</script>
 <p style="font-size:12px;color:gray;margin-bottom:20px;">Silakan login terlebih dahulu</p>
 <div style="margin-bottom:12px;"><input type="text" id="login-username" class="input-box" placeholder="Username" autocomplete="username" autocapitalize="none" spellcheck="false"></div>
 <div class="pwd-wrap" style="margin-bottom:20px;"><input type="password" id="login-password" class="input-box" placeholder="Password" autocomplete="current-password" style="padding-right:46px;"><button type="button" class="btn-eye" onclick="togglePassword('login-password',this)" aria-label="Tampilkan password" title="Tampilkan password"><i class="fa-solid fa-eye"></i></button></div>
@@ -5459,6 +5459,7 @@ const NAMA_LOGIN_DEFAULT='ARTOFIE POS';
 function terapkanNamaLogin(n){
   n=String(n==null?'':n).trim().slice(0,40);
   const el=document.getElementById('login-judul');
+  const sk=document.getElementById('login-judul-skel');if(sk)sk.remove();
   if(el){el.textContent=n||NAMA_LOGIN_DEFAULT;el.style.visibility='visible';}
   try{if(n)localStorage.setItem('artofie_nama_login',n);else localStorage.removeItem('artofie_nama_login');}catch(_){}
 }
@@ -5466,11 +5467,13 @@ function terapkanNamaLogin(n){
   try{const c=localStorage.getItem('artofie_nama_login');if(c)terapkanNamaLogin(c);}catch(_){}
   // Ambil nama terbaru dari server (endpoint publik, tidak perlu login)
   const tampilDefault=()=>{const el=document.getElementById('login-judul');if(el&&el.style.visibility==='hidden')terapkanNamaLogin('');};
-  setTimeout(tampilDefault,4000);
   try{
-    fetch(APPS_SCRIPT_URL+'?action=getInfoLogin&t='+Date.now()).then(r=>r.json()).then(d=>{
-      if(d&&d.status==='success')terapkanNamaLogin(d.nama_login);else tampilDefault();
-    }).catch(tampilDefault);
+    const ac=new AbortController();
+    const tm=setTimeout(()=>ac.abort(),20000); // batas tunggu 20 detik, bukan 4 detik
+    fetch(APPS_SCRIPT_URL+'?action=getInfoLogin&t='+Date.now(),{signal:ac.signal})
+      .then(r=>r.json())
+      .then(d=>{clearTimeout(tm);if(d&&d.status==='success')terapkanNamaLogin(d.nama_login);else tampilDefault();})
+      .catch(()=>{clearTimeout(tm);tampilDefault();});
   }catch(_){tampilDefault();}
 })();
 async function muatPengaturanServer(){
